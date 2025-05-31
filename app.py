@@ -64,6 +64,13 @@ def plot_trend():
 
 # ========== 主页面 ==========
 st.set_page_config(page_title="狗狗考研积分记录系统", layout="wide")
+
+# 欢迎语（居中 + 粉色）
+st.markdown(
+    "<h2 style='text-align:center; color:#ff69b4;'>🎉 欢迎老婆大人登录系统！</h2>",
+    unsafe_allow_html=True
+)
+
 st.title("📘 狗狗考研积分记录系统")
 
 init_log()
