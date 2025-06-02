@@ -35,16 +35,23 @@ def get_last_total():
             return df.iloc[-1]["累计得分"]
     return 0
 
-def save_score(today, rewards, penalties, total, cumulative):
-    row = {
-        "日期": today,
-        "加分项": "，".join(rewards),
-        "扣分项": "，".join(penalties),
-        "总得分": total,
-        "累计得分": cumulative
-    }
+def update_or_append_score(today, rewards, penalties, total, cumulative):
     df = pd.read_csv(SCORE_FILE)
-    df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
+    if today in df["日期"].values:
+        idx = df[df["日期"] == today].index[-1]
+        df.at[idx, "加分项"] += "，" + "，".join(rewards)
+        df.at[idx, "扣分项"] += "，" + "，".join(penalties)
+        df.at[idx, "总得分"] = df.at[idx, "总得分"] + total
+        df.at[idx, "累计得分"] = cumulative
+    else:
+        new_row = {
+            "日期": today,
+            "加分项": "，".join(rewards),
+            "扣分项": "，".join(penalties),
+            "总得分": total,
+            "累计得分": cumulative
+        }
+        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_csv(SCORE_FILE, index=False)
 
 def plot_trend():
@@ -55,23 +62,19 @@ def plot_trend():
     df["日期"] = pd.to_datetime(df["日期"])
     df = df.sort_values("日期")
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(df["日期"], df["累计得分"], marker='o', color='blue')
-    ax.set_title("📈 累计积分趋势图")
+    ax.plot(df["日期"], df["总得分"], marker='o', label="每日得分", color='orange')
+    ax.plot(df["日期"], df["累计得分"], marker='o', label="累计得分", color='blue')
+    ax.set_title("📈 每日得分与累计得分趋势图")
     ax.set_xlabel("日期")
-    ax.set_ylabel("累计得分")
+    ax.set_ylabel("得分")
+    ax.legend()
     ax.grid(True)
     st.pyplot(fig)
 
 # ========== 主页面 ==========
 st.set_page_config(page_title="狗狗考研积分记录系统", layout="wide")
-
-# 欢迎语（居中 + 粉色）
-st.markdown(
-    "<h2 style='text-align:center; color:#ff69b4;'>🎉 欢迎老婆大人登录系统！</h2>",
-    unsafe_allow_html=True
-)
-
 st.title("📘 狗狗考研积分记录系统")
+st.markdown("### 💖 欢迎老婆大人登录系统 💖")
 
 init_log()
 today = datetime.today().strftime("%Y-%m-%d")
@@ -87,9 +90,9 @@ penalty_selected = st.multiselect("请选择触发的扣分项：", list(penalty
 if st.button("📥 提交记录"):
     total = sum(reward_data[r] for r in reward_selected) + sum(penalty_data[p] for p in penalty_selected)
     cumulative = get_last_total() + total
-    save_score(today, reward_selected, penalty_selected, total, cumulative)
+    update_or_append_score(today, reward_selected, penalty_selected, total, cumulative)
     st.success(f"✅ 今日得分：{total} 分 | 📊 累计积分：{cumulative} 分")
 
 st.markdown("---")
-st.subheader("📊 累计积分趋势图")
+st.subheader("📊 每日与累计积分趋势图")
 plot_trend()
