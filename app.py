@@ -91,7 +91,12 @@ if st.button("📥 提交记录"):
     total = sum(reward_data[r] for r in reward_selected) + sum(penalty_data[p] for p in penalty_selected)
     cumulative = get_last_total() + total
     update_or_append_score(today, reward_selected, penalty_selected, total, cumulative)
-    st.success(f"✅ 今日得分：{total} 分 | 📊 累计积分：{cumulative} 分")
+
+    df_all = pd.read_csv(SCORE_FILE)
+    history_total = df_all["总得分"].sum()
+
+    st.success(f"✅ 今日得分：{total} 分 | 🧮 今日前累计：{cumulative - total} 分 | 📊 当前累计积分：{cumulative} 分")
+    st.info(f"📌 所有历史总得分（含今日）：{history_total} 分")
 
 st.markdown("---")
 st.subheader("📊 每日与累计积分趋势图")
